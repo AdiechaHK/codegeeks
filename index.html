@@ -1,14 +1,135 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Code Geeks</title>
-	<link rel="stylesheet" type="text/css" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
-	<script type="text/javascript" src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
-	<script type="text/javascript" src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
+  <title>Demo</title>
+
+  <!-- Latest compiled and minified CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+  <!-- Optional theme -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
+  <link rel="stylesheet" type="text/css" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <style type="text/css"> 
+    .completed { text-decoration: line-through; }
+    #loading-container {position: absolute; height: 100vh; width: 100vw; background: #00000088; z-index: 10; color: white; font-size: 3em; padding-top: 20vh;}
+  </style>
 </head>
 <body>
-	<div class="container">
-		<h1>This is just a demo website to check github hosting.</h1>
-	</div>
+  <div id="app">
+    <div id="loading-container" v-show="loading">
+      <div class="text-center">
+        <i class="fa fa-spinner fa-spin font-size-lg"></i><br>
+        Please Wait
+      </div>
+    </div>
+    <div class="container">
+      <h1>{{ appName }}</h1>
+    </div>
+    <div class="container">
+      <table v-if="tasks.length" class="table table-bordered table-hover">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Task</th>
+            <th class="text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(task, i) in tasks">
+            <td> {{ i + 1 }} </td>
+            <td :class="{'completed': task.completed}">
+              {{ task.text }}
+            </td>
+            <td class="text-right">
+              <button class="btn btn-sm btn-success" @click="done(task)" title="{{task.completed?'Un':''}} Done task">
+                <i v-if="task.completed" class="fa fa-refresh"></i>
+                <i v-else class="fa fa-check"></i>
+              </button>
+              <button class="btn btn-sm btn-danger" @click="drop(task)" title="Delete task">
+                <i class="fa fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div v-else>
+        <h3>No tasks found</h3>
+        <br><br>
+        Start adding tasks from the below.
+      </div>
+    </div>
+    <hr>
+    <div class="container">
+      <div class="input-group">
+        <input type="text" class="form-control" placeholder="Add text here..." v-model="newTask.text" @keyup.enter="add()">
+        <span class="input-group-btn">
+          <button class="btn btn-default" type="button" @click="add()">
+            <i class="fa fa-plus"></i>
+            Add
+          </button>
+        </span>
+      </div><!-- /input-group -->
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.0/axios.min.js" type="text/javascript"></script>
+  <script type="text/javascript">
+    var jsonPath = 'https://jsonbox.io/box_02a30d5e89bc57a93258'
+
+    var app = new Vue({
+      el: '#app',
+      data: {
+        appName: 'ToDo',
+        loading: false,
+        newTask: {},
+        tasks: []
+      },
+      mounted() {
+        this.loading = true;
+        this.resetTask();
+        axios.get(jsonPath)
+          .then(res => {
+            this.tasks = res.data
+            this.loading = false;
+          }).catch(console.error);
+      },
+      methods: {
+        resetTask() {
+          this.newTask = {
+            text:"", completed:false
+          }
+        },
+        add(){
+          this.loading = true;
+          axios.post(jsonPath, this.newTask)
+            .then(res => {
+              this.tasks.push(res.data);
+              this.resetTask();
+              this.loading = false;
+            }).catch(console.error);
+        },
+        done(task) {
+          task.completed = !task.completed;
+          this.loading = true;
+          axios.put(jsonPath + "/" + task._id, task)
+            .then(res => {
+              console.log(res);
+              this.loading = false;
+            })
+            .catch(console.error);
+        },
+        drop(task){
+          this.loading = true;
+          axios.delete(jsonPath + "/" + task._id)
+            .then(res => {
+              this.tasks.splice(this.tasks.indexOf(task), 1);
+              console.log(res);
+              this.loading = false;
+            }).catch(console.error);
+        }
+      }
+    });
+  </script>
 </body>
 </html>
